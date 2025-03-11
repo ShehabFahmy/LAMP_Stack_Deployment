@@ -1,0 +1,10 @@
+---
+# tasks file for roles/dbserver
+- name: Include the installation tasks
+  include_tasks: install.yml
+
+- name: Include the configuration tasks
+  include_tasks: configure.yml
+
+- name: Include the database creation tasks
+  include_tasks: create.yml

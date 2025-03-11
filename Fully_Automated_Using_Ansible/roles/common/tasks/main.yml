@@ -1,0 +1,6 @@
+---
+# tasks file for roles/common
+- name: Update apt cache and upgrade packages
+  apt:
+    update_cache: yes
+    upgrade: yes

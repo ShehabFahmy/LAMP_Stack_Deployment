@@ -1,0 +1,53 @@
+#region Create We Database and Web User
+- name: Create MySQL database
+  community.mysql.mysql_db:
+    name: "{{ db_name }}"
+    state: present
+    login_user: root
+    login_password: "{{ db_root_password }}"
+  register: db_creation_result
+
+- name: Create MySQL user for web01
+  community.mysql.mysql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_user_password }}"
+    host: "web01"   # Allow access only from web01
+    priv: "{{ db_name }}.*:ALL"
+    state: present
+    login_user: root
+    login_password: "{{ db_root_password }}"
+
+- name: Flush MySQL privileges
+  community.mysql.mysql_query:
+    query: "FLUSH PRIVILEGES;"
+    login_user: root
+    login_password: "{{ db_root_password }}"
+#endregion
+
+#region Import Schema
+- name: Ensure secrets directory exists
+  file:
+    path: "{{ db_schema_file_path | dirname }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0400'
+
+- name: Copy database schema file to remote host
+  copy:
+    src: db_schema.sql
+    dest: "{{ db_schema_file_path }}"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Import database schema
+  community.mysql.mysql_db:
+    name: "{{ db_name }}"
+    state: import
+    target: "{{ db_schema_file_path }}"
+    login_user: root
+    login_password: "{{ db_root_password }}"
+  when: db_creation_result.changed
+  notify: Restart MySQL
+#endregion

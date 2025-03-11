@@ -1,0 +1,63 @@
+- name: Check if .my.cnf file exists
+  stat:
+    path: ~/.my.cnf
+  register: mycnf_file
+
+- name: Allow traffic to MySQL from any IP address
+  lineinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: '^{{ item }}='
+    line: '{{ item }}= 0.0.0.0'
+    backup: yes  # Creates a backup before modifying the file
+  loop:
+    - 'bind-address		'
+    - 'mysqlx-bind-address	'
+
+#region mysql_secure_installation
+- name: Set MySQL root password
+  shell: mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '{{ db_root_password }}'; FLUSH PRIVILEGES;"
+  become: yes
+  when: not mycnf_file.stat.exists  # First time installation
+
+- name: Remove Anonymous Users
+  community.mysql.mysql_user:
+    name: ""
+    state: absent
+    login_user: root
+    login_password: "{{ db_root_password }}"
+  when: not mycnf_file.stat.exists  # First time installation
+
+- name: Remove Test Database
+  community.mysql.mysql_db:
+    name: test
+    state: absent
+    login_user: root
+    login_password: "{{ db_root_password }}"
+  when: not mycnf_file.stat.exists  # First time installation
+
+- name: Disallow Remote Root Login
+  community.mysql.mysql_user:
+    name: root
+    host: "{{ item }}"
+    state: absent
+    login_user: root
+    login_password: "{{ db_root_password }}"
+  loop:
+    - "%"
+    - "0.0.0.0"
+  when: not mycnf_file.stat.exists  # First time installation
+
+- name: Reload Privileges
+  community.mysql.mysql_query:
+    query: "FLUSH PRIVILEGES;"
+    login_user: root
+    login_password: "{{ db_root_password }}"
+  when: not mycnf_file.stat.exists  # First time installation
+#endregion
+
+- name: Configure .my.cnf for secure authentication
+  template:
+    src: my.cnf.j2
+    dest: ~/.my.cnf
+    mode: '0600'
+  notify: Restart MySQL

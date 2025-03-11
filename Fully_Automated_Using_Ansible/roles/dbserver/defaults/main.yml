@@ -1,0 +1,6 @@
+---
+# defaults file for roles/dbserver
+dbserver_packages:
+  - mysql-server
+  - python3-pymysql
+  - python3-mysql.connector

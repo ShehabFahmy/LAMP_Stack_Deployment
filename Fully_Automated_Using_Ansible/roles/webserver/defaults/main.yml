@@ -1,0 +1,11 @@
+---
+# defaults file for roles/webserver
+webserver_packages:
+  - apache2
+  - php
+  - libapache2-mod-php
+  - php-mysql
+
+exposed_port: 80
+server_admin: webmaster@localhost
+root_dir: /var/www/html

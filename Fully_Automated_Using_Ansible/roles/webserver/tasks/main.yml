@@ -1,0 +1,65 @@
+---
+# tasks file for roles/webserver
+- name: Install required packages
+  apt:
+    pkg: "{{ webserver_packages }}"
+    state: present
+
+- name: Add a new host for database db01
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ dbserver_ip }} {{ dbserver_name }}"
+    state: present
+
+- name: Configure Apache
+  template:
+    src: apache.conf.j2
+    dest: "/etc/apache2/sites-available/000-default.conf"
+    mode: '0644'
+
+- name: Deploy phpinfo.php
+  copy:
+    src: phpinfo.php
+    dest: "/var/www/html/phpinfo.php"
+    mode: '0644'
+
+- name: Remove existing index.html
+  file:
+    path: "/var/www/html/index.html"
+    state: absent
+
+- name: Deploy index.php
+  copy:
+    src: index.php
+    dest: "/var/www/html/index.php"
+    mode: '0644'
+
+- name: Ensure secrets directory exists
+  file:
+    path: "{{ db_config_file_path | dirname }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0500'
+
+- name: Configure db_config.php for database credentials
+  copy:
+    src: db_config.php
+    dest: "{{ db_config_file_path }}"
+    owner: www-data
+    group: www-data
+    mode: '0440'
+
+- name: Store database user password
+  template:
+    src: DB_USER_PASSWORD.txt.j2
+    dest: "{{ db_user_password_file_path }}"
+    owner: www-data
+    group: www-data
+    mode: '0440'
+
+- name: Restart Apache
+  service:
+    name: apache2
+    state: restarted
+  become: true

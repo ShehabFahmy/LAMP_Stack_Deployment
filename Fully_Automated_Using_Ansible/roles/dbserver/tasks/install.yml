@@ -1,0 +1,16 @@
+- name: Install required packages
+  apt:
+    pkg: "{{ dbserver_packages }}"
+    state: present
+
+- name: Ensure MySQL is enabled and started
+  service:
+    name: mysql
+    state: started
+    enabled: true
+
+- name: Add a new host for webserver web01
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ webserver_ip }} {{ webserver_name }}"
+    state: present

@@ -1,0 +1,4 @@
+.vagrant
+Secrets/*
+!Secrets/README.md
+!Secrets/ansible_vault_password.txt

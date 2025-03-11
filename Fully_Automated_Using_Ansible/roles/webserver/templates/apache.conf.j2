@@ -1,0 +1,8 @@
+<VirtualHost *:{{ exposed_port }}>
+    ServerAdmin {{ server_admin }}
+    DocumentRoot {{ root_dir }}
+    
+    <Directory {{ root_dir }}>
+        AllowOverride All
+    </Directory>
+</VirtualHost>
